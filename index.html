@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAG CODER — 2019 Audi RS5 B9</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1814;
+    --bg2: #1e1b16;
+    --bg3: #222018;
+    --border: #2a2620;
+    --text: #d4d0c8;
+    --text-bright: #f5f0e8;
+    --text-muted: #8a8478;
+    --text-dim: #5a554d;
+    --brass: #c9a84c;
+    --brass-dark: #8a7640;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --blue: #93c5fd;
+    --font-display: 'DM Sans', 'Segoe UI', sans-serif;
+    --font-body: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+  .app { max-width: 540px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg2);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo-box {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--brass), var(--brass-dark));
+    display: flex; align-items: center; justify-content: center;
+    color: var(--bg); font-size: 20px;
+  }
+  .header-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 2px; color: var(--text-bright); }
+  .header-sub { font-size: 10px; color: var(--text-muted); letter-spacing: 3px; margin-top: 2px; }
+  .status { display: flex; align-items: center; gap: 8px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+  .status-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-text { font-size: 11px; color: var(--text-muted); }
+  .status-text.on { color: var(--green); }
+
+  /* Nav */
+  .nav {
+    display: flex; gap: 4px; padding: 8px 20px;
+    border-bottom: 1px solid var(--border); background: var(--bg2); overflow-x: auto;
+  }
+  .nav-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-family: var(--font-body); font-size: 12px;
+    padding: 8px 14px; cursor: pointer; border-radius: 6px; white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { color: var(--text-bright); }
+  .nav-btn.active { background: var(--border); color: var(--text-bright); }
+  .nav-btn.queue-btn { color: var(--yellow); border: 1px solid rgba(251,191,36,0.25); }
+
+  /* Content */
+  .content { padding: 20px; }
+
+  /* Connect card */
+  .connect-card {
+    text-align: center; padding: 40px 20px;
+    border: 1px dashed var(--border); border-radius: 12px;
+  }
+  .connect-card .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .connect-card h2 { font-family: var(--font-display); font-size: 20px; color: var(--text-bright); margin-bottom: 8px; }
+  .connect-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; max-width: 340px; margin-left: auto; margin-right: auto; }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brass), #a08838);
+    color: var(--bg); border: none; padding: 10px 24px; border-radius: 8px;
+    font-family: var(--font-display); font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 1px;
+  }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger {
+    background: none; border: 1px solid rgba(248,113,113,0.25);
+    color: var(--red); padding: 10px 24px; border-radius: 8px;
+    font-family: var(--font-body); font-size: 13px; cursor: pointer;
+  }
+  .btn-add {
+    background: none; border: 1px solid #3a3630; color: var(--brass);
+    padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer;
+    font-family: var(--font-body); white-space: nowrap;
+  }
+  .btn-queued {
+    background: rgba(201,168,76,0.12); border: 1px solid var(--brass); color: var(--brass);
+    padding: 6px 14px; border-radius: 6px; font-size: 11px; cursor: pointer;
+    font-family: var(--font-body); white-space: nowrap;
+  }
+  .btn-remove {
+    background: none; border: 1px solid #3a3630; color: var(--red);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  }
+  .btn-back {
+    background: none; border: none; color: var(--text-muted);
+    font-family: var(--font-body); font-size: 12px; padding: 0 0 16px; cursor: pointer;
+  }
+
+  /* Error */
+  .error-box {
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 8px; padding: 10px 14px; color: var(--red); font-size: 12px; margin-bottom: 16px;
+  }
+
+  /* Stats */
+  .stat-row { display: flex; gap: 10px; }
+  .stat-card {
+    flex: 1; background: var(--bg3); border-radius: 10px;
+    padding: 16px 12px; text-align: center; border: 1px solid var(--border);
+  }
+  .stat-value { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--text-bright); }
+  .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Section */
+  .section-title {
+    font-family: var(--font-display); font-size: 14px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px;
+  }
+
+  /* Module card */
+  .module-card {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    background: var(--bg3); border-radius: 10px; margin-bottom: 8px;
+    cursor: pointer; border: 1px solid var(--border); transition: border-color 0.15s;
+  }
+  .module-card:hover { border-color: var(--brass-dark); }
+  .module-addr {
+    font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+    color: var(--brass); background: var(--border); padding: 6px 10px;
+    border-radius: 6px; min-width: 36px; text-align: center;
+  }
+  .module-arrow { color: var(--text-dim); font-size: 18px; }
+
+  /* Tweak row */
+  .tweak-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    background: var(--bg3); border-radius: 8px; margin-bottom: 6px; border: 1px solid var(--border);
+  }
+  .tweak-info { flex: 1; }
+  .tweak-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tweak-name { font-size: 13px; color: var(--text-bright); }
+  .risk-badge {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
+    padding: 2px 6px; border-radius: 4px; border: 1px solid;
+  }
+  .risk-low { color: var(--green); border-color: var(--green); }
+  .risk-medium { color: var(--yellow); border-color: var(--yellow); }
+  .risk-high { color: var(--red); border-color: var(--red); }
+  .tweak-desc { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .tweak-addr { font-size: 10px; color: var(--text-dim); margin-top: 4px; font-family: var(--font-mono); }
+
+  /* Log */
+  .log-box {
+    background: #141210; border-radius: 8px; padding: 12px;
+    max-height: 200px; overflow-y: auto; border: 1px solid var(--border);
+  }
+  .log-line { font-family: var(--font-mono); font-size: 11px; line-height: 1.8; }
+  .log-ts { opacity: 0.4; margin-right: 8px; font-size: 10px; }
+
+  /* Terminal */
+  .term-box {
+    background: #0d0c0a; border-radius: 8px; padding: 14px;
+    min-height: 180px; max-height: 300px; overflow-y: auto; border: 1px solid var(--border);
+  }
+  .term-line { font-family: var(--font-mono); font-size: 12px; margin-bottom: 4px; }
+  .term-input-row { display: flex; gap: 8px; margin-top: 8px; }
+  .term-input {
+    flex: 1; background: #141210; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text-bright); font-family: var(--font-mono);
+    font-size: 13px; outline: none;
+  }
+  .term-input:focus { border-color: var(--brass-dark); }
+  .quick-cmds { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .quick-cmd {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 4px 10px; border-radius: 4px; font-family: var(--font-mono);
+    font-size: 11px; cursor: pointer;
+  }
+  .quick-cmd:hover { border-color: var(--brass-dark); color: var(--text-bright); }
+  .search-input {
+    width: 100%; background: #141210; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text-bright); font-family: var(--font-body);
+    font-size: 13px; outline: none; margin-bottom: 16px;
+  }
+  .search-input:focus { border-color: var(--brass-dark); }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  /* Module header */
+  .module-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .module-header h3 { font-family: var(--font-display); font-size: 18px; color: var(--text-bright); }
+
+  /* Warning overlay */
+  .warning-overlay {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .warning-box {
+    background: var(--bg3); border: 1px solid rgba(251,191,36,0.25);
+    border-radius: 14px; padding: 32px 28px; max-width: 420px; text-align: center;
+  }
+  .warning-box h2 { font-family: var(--font-display); font-size: 22px; color: var(--yellow); margin: 0 0 16px; }
+  .warning-body { font-size: 13px; line-height: 1.7; color: var(--text); text-align: left; }
+  .warning-body p { margin-bottom: 10px; }
+  .warning-note { color: var(--text-muted); }
+
+  .w-full { width: 100%; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Warning screen -->
+  <div id="warning-screen" class="warning-overlay">
+    <div class="warning-box">
+      <div style="font-size:40px;margin-bottom:12px">⚠</div>
+      <h2>IMPORTANT — READ FIRST</h2>
+      <div class="warning-body">
+        <p>This tool sends <strong>real diagnostic commands</strong> to your vehicle ECUs via OBD-II. Incorrect coding can cause warning lights, disable features, or brick modules.</p>
+        <p><strong>Before you start:</strong></p>
+        <p>• Always <strong>back up your current long coding</strong> before making changes — use the Backup tab to save all modules</p>
+        <p>• Keep ignition ON / engine OFF while coding</p>
+        <p>• <strong>2019+ IMPORTANT:</strong> The hood must be unlatched/open for coding changes to take effect</p>
+        <p>• Medium/high risk tweaks can affect driveability</p>
+        <p>• <strong>Security PINs:</strong> Module 09: 20113 · Module 46: 20103 · Module 03: 40168 · Module 13/A5/CA/57: 20103 · Module 6D: 12345</p>
+        <p>• The pre-loaded tweaks are community-sourced for the B9 RS5 — verify against forums before applying</p>
+        <p>• Some modules require security access (seed-key) which this tool supports via raw terminal commands</p>
+        <p class="warning-note">You accept all responsibility for changes made to your vehicle.</p>
+      </div>
+      <button class="btn-primary mt-20" onclick="dismissWarning()">I Understand — Continue</button>
+    </div>
+  </div>
+
+  <!-- Main app (hidden until warning dismissed) -->
+  <div id="main-app" class="hidden">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-box">⬡</div>
+        <div>
+          <div class="header-title">VAG CODER</div>
+          <div class="header-sub">2019 AUDI RS5 SPORTBACK • B9 PRESTIGE</div>
+        </div>
+      </div>
+      <div class="status">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-text" id="status-text">NOT CONNECTED</span>
+      </div>
+    </div>
+
+    <div class="nav" id="nav">
+      <button class="nav-btn active" data-view="home" onclick="switchView('home')">Dashboard</button>
+      <button class="nav-btn" data-view="modules" onclick="switchView('modules')">Modules</button>
+      <button class="nav-btn" data-view="backup" onclick="switchView('backup')">Backup</button>
+      <button class="nav-btn" data-view="terminal" onclick="switchView('terminal')">Terminal</button>
+      <button class="nav-btn queue-btn hidden" id="queue-nav-btn" data-view="apply" onclick="switchView('apply')">Queue (0)</button>
+    </div>
+
+    <div class="content">
+      <!-- HOME -->
+      <div id="view-home"></div>
+      <!-- MODULES -->
+      <div id="view-modules" class="hidden"></div>
+      <!-- BACKUP -->
+      <div id="view-backup" class="hidden"></div>
+      <!-- TERMINAL -->
+      <div id="view-terminal" class="hidden"></div>
+      <!-- APPLY -->
+      <div id="view-apply" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// VAG CODER — Standalone BLE OBD-II Tool
+// 2019 Audi RS5 (B9)
+// ═══════════════════════════════════════════════
+
+// ── BLE UUIDs ──
+const BLE_SERVICES = [
+  "000018f0-0000-1000-8000-00805f9b34fb",
+  "0000fff0-0000-1000-8000-00805f9b34fb",
+  "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
+  "0000ffe0-0000-1000-8000-00805f9b34fb",
+];
+const WRITE_CHARS = [
+  "000018f2-0000-1000-8000-00805f9b34fb",
+  "0000fff1-0000-1000-8000-00805f9b34fb",
+  "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f",
+  "0000ffe1-0000-1000-8000-00805f9b34fb",
+];
+const NOTIFY_CHARS = [
+  "000018f1-0000-1000-8000-00805f9b34fb",
+  "0000fff2-0000-1000-8000-00805f9b34fb",
+  "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f",
+  "0000ffe1-0000-1000-8000-00805f9b34fb",
+];
+const ELM_INIT = ["ATZ", "ATE0", "ATL0", "ATS0", "ATH1", "ATSP6", "ATAT1"];
+
+// ── RS5 B9 US-Spec Full Module Database ──
+// Sources: AudiWorld OBDeleven Thread, Audizine VCDS B9 Thread, community-verified
+// compat: "b9" = confirmed 2019 RS5, "b9.5" = B9.5+ only, "mib3" = MIB3 only (2020+), "req:X" = needs option X
+const COMPAT_LABELS = {
+  "b9": { label: "YOUR CAR ✓", color: "#4ade80", bg: "rgba(74,222,128,0.12)" },
+  "b9.5": { label: "B9.5 ONLY ✗", color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  "mib3": { label: "MIB3 ONLY ✗", color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+  "req:hud": { label: "IF HUD", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:bo": { label: "IF B&O", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:massage": { label: "IF MASSAGE", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:vent": { label: "IF VENT SEATS", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:acc": { label: "IF ACC", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:360cam": { label: "IF 360 CAM", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:sunroof": { label: "IF SUNROOF", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+  "req:hardware": { label: "HARDWARE NEEDED", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
+};
+const RS5_MODULES = {
+  "09": { name: "Central Electronics", address: "09", security: "20113", tweaks: [
+    { id: "scandi_drl", name: "Scandinavian DRLs", desc: "Tail lights stay on with front DRLs", module: "09", coding: "Long Coding: sl_at_drl → active", type: "long", risk: "low", compat: "b9" },
+    { id: "drl_dimming", name: "DRL Dim with Turn Signal", desc: "DRLs slowly dim instead of abruptly off when blinker activates. NOT for LED Matrix.", module: "09", coding: "Long Coding: drl_at_indication_config → dimming_to_sl", type: "long", risk: "low", compat: "b9" },
+    { id: "drl_wink_off", name: "Disable DRL Wink", desc: "Keep DRLs dimmed instead of turning off per-side with turn signals. Side effect: taillights always on.", module: "09", coding: "Long Coding: drl_at_sl → active + drl_at_indication_config → dimming_to_sl", type: "long", risk: "low", compat: "b9" },
+    { id: "lowbeam_flash", name: "Low Beam with High Beams", desc: "Low beams stay on when high beams flash or are on", module: "09", coding: "Long Coding: lowbeam_at_flash → active", type: "long", risk: "low", compat: "b9" },
+    { id: "coming_home", name: "Coming Home / Welcome Lights", desc: "Lights stay on after lock / turn on when approaching", module: "09", coding: "Long Coding: Byte 10, Bit 5 → 1", type: "long", risk: "low", compat: "b9" },
+    { id: "drl_off_handbrake", name: "DRL Off When Handbrake Up", desc: "DRLs turn off when parking brake is engaged", module: "09", coding: "Long Coding: drl_break → active", type: "long", risk: "low", compat: "b9" },
+    { id: "drl_menu", name: "DRL On/Off Option in MMI", desc: "Enable toggle for DRLs in the MMI settings", module: "09", coding: "Long Coding: DRL MMI → active (or Byte 2, Bit 1 → 1)", type: "long", risk: "low", compat: "b9" },
+    { id: "sidemarker_off", name: "Disable Amber Side Markers (US)", desc: "Turn off orange side marker lights in headlights", module: "09", coding: "Long Coding: Sidemarker_via_lcm → Not_active (or Byte 06, Bit 4 uncheck)", type: "long", risk: "low", compat: "b9" },
+    { id: "euro_parking", name: "Euro Parking Lights", desc: "Enable single-side parking lights via signal stalk when car is off", module: "09", coding: "Long Coding: parking_light_config → single_side_parking_light", type: "long", risk: "low", compat: "b9" },
+    { id: "interior_light", name: "Interior Lighting Behavior", desc: "Change which interior lights turn on when opening doors", module: "09", coding: "Long Coding: light_scenario → Not_Active", type: "long", risk: "low", compat: "b9" },
+    { id: "mirror_fold", name: "Auto-Fold Mirrors on Lock", desc: "Mirrors fold on lock 2nd press or long-press", module: "09", coding: "Via Module 46: mirror_retraction_at_comfort_close → active", type: "long", risk: "low", compat: "b9" },
+    { id: "easy_entry", name: "Easy Entry / Exit Seat", desc: "Seat moves back for entry/exit. Select 'Store settings on remote key' in MMI after.", module: "09", coding: "Module 36: Easy_Entry_front/fond → Active, enabling_EasyEntry_front_seat_by_BCM → Active + Module 09: Byte 14, Bit 2 → 1", type: "long", risk: "low", compat: "b9" },
+    { id: "park_assist_speed", name: "Parking Assist Speed Threshold", desc: "Increase speed before park assist disengages (max 20 km/h)", module: "09", coding: "Adaptation: [IDE03782] Switch off speed for parking assist → 20 (from 5)", type: "adapt", risk: "low", compat: "b9" },
+    { id: "seat_heat_3", name: "Seat Heating Stage 3 Temp", desc: "Increase max seat heating temperature by up to 5°C", module: "09", coding: "Adaptation: [IDE10321] Seating Heater micro adjust Stage 3 → 5C", type: "adapt", risk: "low", compat: "b9" },
+    { id: "seat_vent_3", name: "Seat Ventilation Stage 3 Speed", desc: "Increase fan speed of vent seat high setting (+10%)", module: "09", coding: "Adaptation: [IDE10322] Seating Ventilation micro adjust Stage 3 → 10%", type: "adapt", risk: "low", compat: "req:vent" },
+    { id: "massage_time", name: "Extend Massage Seat Duration", desc: "Increase massage timer (default 600s, max 1000s)", module: "09", coding: "Adaptation: Multicontour seat driver/pass → Running time → 1000", type: "adapt", risk: "low", compat: "req:massage" },
+    { id: "auto_pdc_front", name: "Auto Front PDC Sensor", desc: "Auto show front parking distance screen when close to objects", module: "09", coding: "Long Coding: Byte 37, Bit 1 → 1", type: "long", risk: "low", compat: "b9" },
+    { id: "ops_360", name: "360° View with OPS Display", desc: "Combine Park Assist 360 camera with OPS on MMI", module: "09", coding: "Adaptation: visual display for park assist → with OPS 360°", type: "adapt", risk: "low", compat: "req:360cam" },
+    { id: "headlamp_wash_off", name: "Disable Headlamp Wash", desc: "Disable headlight washers. Reported NOT found on some 2019 B9.", module: "09", coding: "Adaptation: head_lamp_wash → not_installed", type: "adapt", risk: "low", compat: "b9" },
+    { id: "hca_heading", name: "Heading Control (Lane Assist)", desc: "Enable heading control for lane assist support", module: "09", coding: "Long Coding: heading_control_config → heading_control (Byte 35, Bit 0)", type: "long", risk: "medium", compat: "b9" },
+    { id: "auto_highbeam", name: "Auto High Beams (Premium Plus)", desc: "Enable auto high beams. After: MMI → Vehicle → Exterior Lights → Headlight assistant.", module: "09", coding: "Long Coding: high_beam_functions → head_light_assistant + mmi_fla_glw_mxb → active. Also A5: AFS_coding_Light_Assist → High_Beam_Assist", type: "long", risk: "low", compat: "b9" },
+    { id: "park_tone_off", name: "Disable Park Assist Beep", desc: "Turn off initial beep when pressing park assist button", module: "09", coding: "Adaptation: Park Assist Activation Tone → Off", type: "adapt", risk: "low", compat: "b9" },
+    { id: "seat_heat_dist", name: "Seat Heating Distribution", desc: "Change heat distribution on seat (back vs cheeks)", module: "09", coding: "Long Coding: balancing_seatheating_backrestheating → front_only", type: "long", risk: "low", compat: "b9" },
+    { id: "auto_hold_09", name: "Auto Hold Button Support", desc: "Enable Auto Hold coding. Requires physical button hardware retrofit first.", module: "09", coding: "Byte 15, Bit 6 → 1. Also Module 03: Byte 18 Bit 6 → 1, Byte 30 Bit 1 → 1", type: "long", risk: "medium", compat: "req:hardware" },
+  ]},
+  "17": { name: "Instrument Cluster / Virtual Cockpit", address: "17", tweaks: [
+    { id: "needle_sweep", name: "Needle Sweep / Celebration", desc: "Gauges sweep full range on ignition start", module: "17", coding: "Long Coding: Byte 1, Bit 0 (Staging) → check", type: "long", risk: "low", compat: "b9" },
+    { id: "oil_temp", name: "Oil Temperature Display", desc: "Show oil temp gauge in Virtual Cockpit", module: "17", coding: "Long Coding: Byte 1, Bit 2 → 1", type: "long", risk: "low", compat: "b9" },
+    { id: "lap_timer", name: "Lap Timer in Cluster", desc: "Enable built-in lap timer in Virtual Cockpit", module: "17", coding: "Long Coding: Byte 1, Bit 3 → 1", type: "long", risk: "low", compat: "b9" },
+    { id: "accel_measure", name: "Acceleration Measurement (G-Meter)", desc: "Enable 0-60 timer and G-force display. Open hood before coding.", module: "17", coding: "Adaptation: Configuration of displayable contents → Acceleration measurement → Display", type: "adapt", risk: "low", compat: "b9" },
+    { id: "seatbelt_off", name: "Disable Seat Belt Chime", desc: "Disable audible warning (visual remains). Version 1 = visual only, off = none.", module: "17", coding: "Long Coding: Seat belt warning → Version 1 (visual only) or off", type: "long", risk: "low", compat: "b9" },
+    { id: "cluster_brightness", name: "Adjust Cluster Brightness", desc: "Dim main cluster to match center display at lowest setting", module: "17", coding: "Adaptation: Dimming_characteristic_curve Y2: 0, Y1: 0 (from 2)", type: "adapt", risk: "low", compat: "b9" },
+    { id: "gear_display", name: "Show Gear Number in D/S", desc: "Display D1-D8/S1-S7 instead of just D or S", module: "17", coding: "Module 02 Adaptation: Single gear display → D on/S on", type: "adapt", risk: "low", compat: "b9" },
+    { id: "lane_assist_vc", name: "Lane Assist in VC", desc: "Show lane assist indicator in instrument cluster", module: "17", coding: "Long Coding: Byte 4, Bit 6 (Lane assistant = Yes) + Byte 5, Bit 3 (Lane change = Yes)", type: "long", risk: "low", compat: "b9" },
+    { id: "door_tone_off", name: "Disable Door Open / Ignition Tone", desc: "Turn off warning tone when door open with ignition on", module: "17", coding: "Adaptation: Ignition active message Trigger → No display", type: "adapt", risk: "low", compat: "b9" },
+    { id: "car_variant", name: "Change VC Car Variant Display", desc: "Change variant in VC. B9: 8=A5Q, 10=S5Q. Trial and error.", module: "17", coding: "Long Coding: Vehicle variante → change derivative number", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "5F": { name: "Infotainment / MMI (MIB2)", address: "5F", tweaks: [
+    { id: "green_menu", name: "Green Engineering Menu", desc: "Unlock hidden developer menu in MMI", module: "5F", coding: "Method 1: LOGIN S12345 → Adaptation: Entwicklermodus. Method 2: Code 20103 → Development mode → on. Reboot MMI.", type: "adapt", risk: "low", compat: "b9" },
+    { id: "welcome_sound", name: "Welcome / Heartbeat Sound", desc: "Startup sound when MMI turns on. RS5 gets heartbeat. Adjust in MMI Sound.", module: "5F", coding: "Adaptation: Vehicle configuration → vehicle_readiness_sound → active", type: "adapt", risk: "low", compat: "b9" },
+    { id: "exit_sound", name: "Exit Sound (Audi Heartbeat)", desc: "Play exit sound when MMI turns off. Adjust in Sound > Welcome Sound.", module: "5F", coding: "Adaptation: Vehicle configuration → vehicle_leaving_sound → active", type: "adapt", risk: "low", compat: "b9" },
+    { id: "vim", name: "Video in Motion (VIM)", desc: "Remove MMI lockout for video while driving. Open hood first.", module: "5F", coding: "Adaptation: Car_Function_Adaptations_Gen2 → navi_display_in_motion → Activated", type: "adapt", risk: "low", compat: "b9" },
+    { id: "speed_warning_off", name: "Disable Speed Warning", desc: "Remove 120 km/h speed warning popup", module: "5F", coding: "Adaptation: Speed warning threshold → deactivate", type: "adapt", risk: "low", compat: "b9" },
+    { id: "siriusxm_traffic", name: "SiriusXM Traffic (NavTraffic)", desc: "Use SXM NavTraffic instead of Audi Connect. Needs SXM subscription + refresh.", module: "5F", coding: "Adaptation: Fee-based traffic information (TMC) → 34305 (from 65533). Reboot MMI.", type: "adapt", risk: "low", compat: "b9" },
+    { id: "ext_sim", name: "External SIM Card Slot", desc: "Enable glove box SIM for WiFi hotspot. Fi APN: h2g2, ATT: phone.", module: "5F", coding: "Adaptation: Internal SIM card use → Automatic. Reboot MMI, set APN in Connection Manager.", type: "adapt", risk: "low", compat: "b9" },
+    { id: "nav_panning", name: "Nav Panning While Driving", desc: "Allow touchpad pan/zoom of nav while moving. Reboot MMI after.", module: "5F", coding: "Adaptation: Locked menu contents → FB_NAV_3 → non_blocked", type: "adapt", risk: "low", compat: "b9" },
+    { id: "carplay_keyboard", name: "CarPlay Keyboard While Moving", desc: "Enable soft keyboard in CarPlay (Waze etc) while driving", module: "5F", coding: "Adaptation: nhtsa_limitation_switches_for_carplay_no_softKeyboard → not_activated", type: "adapt", risk: "low", compat: "b9" },
+    { id: "aa_keyboard", name: "Android Auto Text While Moving", desc: "Enable text entry in AA apps while driving", module: "5F", coding: "Adaptation: nhtsa_limitation_switches_for_androidauto_no_text_input → not_activated", type: "adapt", risk: "low", compat: "b9" },
+    { id: "no_user_select", name: "Disable User Selection on Startup", desc: "Skip user profile screen on boot. Disables Users & Privacy menus.", module: "5F", coding: "Adaptation: Menu IAA PSO → not_activated, Clamp 15 off → not_activated, over threshold high → not_activated, IAA_PSO_0x52_msg_bus/0x52 → not_activated", type: "adapt", risk: "low", compat: "b9" },
+    { id: "wireless_carplay", name: "Wireless CarPlay", desc: "Enable wireless CarPlay. Does NOT work on MIB2 (your 2019). MIB3/2020+ only.", module: "5F", coding: "5F: WLAN 5_ghz_wlan → On, Apple_car_play_wireless → On, Mirror_link → On. 75: WLAN 5GHz → On", type: "adapt", risk: "low", compat: "mib3" },
+  ]},
+  "46": { name: "Central Convenience / Comfort", address: "46", security: "20103", tweaks: [
+    { id: "lock_ignition", name: "Lock with Ignition On", desc: "Lock car while engine running and keys outside. B9 uses automatic_unlock_nar.", module: "46", coding: "Security: 20103 → Long Coding: automatic_unlock_nar → active (or Byte 09, Bit 07)", type: "long", risk: "low", compat: "b9" },
+    { id: "auto_unlock_off", name: "Disable Auto-Unlock After Park", desc: "Prevent doors auto-unlocking when shifting to Park", module: "46", coding: "Security: 20103 → Long Coding: automatic_unlock_nar → not_active", type: "long", risk: "low", compat: "b9" },
+    { id: "auto_open", name: "Auto Unlock on Approach", desc: "Car unlocks at ~1-2m. Works best from front/side on '19 RS5. Low battery may trigger alarm.", module: "46", coding: "Security: 20103 → Long Coding: automatic_opening → active (or Byte 28, Bit 6 → 1)", type: "long", risk: "low", compat: "b9" },
+    { id: "keyfob_range", name: "Extend Key Fob Range", desc: "Remove range limitation. WARNING: May break auto-tailgate close.", module: "46", coding: "Security: 20103 → range_limitation_lock/rear/open/panic + central_locking_system_request_for_range_function → Not_Active", type: "long", risk: "low", compat: "b9" },
+    { id: "comfort_window", name: "Extend Comfort Window Range", desc: "Open/close windows from further away with key fob", module: "46", coding: "Security: 20103 → comfort_operation_range_limitation → Not_Active", type: "long", risk: "low", compat: "b9" },
+    { id: "mirror_fold_46", name: "Fold Mirrors via Key Fob", desc: "Mirrors fold on 2nd lock press. Uncheck 'Fold Mirrors' in MMI first.", module: "46", coding: "Security: 20103 → mirror_retraction_at_comfort_close → active", type: "long", risk: "low", compat: "b9" },
+    { id: "comfort_turn", name: "Comfort Turn Signal Count", desc: "Blinker flash count on light tap (default 3, max 5)", module: "46", coding: "Adaptation: Turn signal control → Freeway flashing cycles → 5", type: "adapt", risk: "low", compat: "b9" },
+    { id: "double_beep", name: "Double Beep on Unlock", desc: "Audible double beep when unlocking or opening tailgate", module: "46", coding: "Adaptation: sounder_settings → beeptime_opening → double_beep + beep_at_opening → On", type: "adapt", risk: "low", compat: "b9" },
+    { id: "trunk_time", name: "Increase Trunk Open Hold Time", desc: "Longer fob press to open trunk (prevents accidental, max 5000ms)", module: "46", coding: "Adaptation: Time for opening rear lid with remote → 2000 (from 800)", type: "adapt", risk: "low", compat: "b9" },
+    { id: "emergency_brake_flash", name: "Emergency Brake Light Flash (US)", desc: "Brake lights strobe during ABS braking (EU default, not US)", module: "46", coding: "Security: 20103 → emergency_brake_indication → active + emergency_flashing_precrash → active + emergency_flashing_via_acc → active (if ACC)", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "08": { name: "HVAC / Air Conditioning", address: "08", tweaks: [
+    { id: "start_stop_off", name: "Disable Start/Stop via A/C", desc: "Disable start/stop while A/C runs. Note: A/C may run constantly.", module: "08", coding: "Adaptation: A/C comfort param for start/stop function → 0 (from 5)", type: "adapt", risk: "low", compat: "b9" },
+    { id: "recirc_memory", name: "Air Recirculation Memory", desc: "Remember recirculation setting between restarts", module: "08", coding: "Long Coding: Store recirculation air setting → Save", type: "long", risk: "low", compat: "b9" },
+    { id: "ac_eco", name: "A/C Eco Mode (Replace A/C Max)", desc: "Replace A/C Max with A/C Eco for lower energy use", module: "08", coding: "Long Coding: ACmax/ECO → ECO", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "02": { name: "Transmission (ZF8)", address: "02", tweaks: [
+    { id: "gear_display_02", name: "Show Gear in D and S", desc: "Display D1-D8, S1-S7 instead of just D/S", module: "02", coding: "Adaptation: Single gear display → D on/S on", type: "adapt", risk: "low", compat: "b9" },
+  ]},
+  "01": { name: "Engine ECU (EA839 2.9TT)", address: "01", tweaks: [
+    { id: "exhaust_flap", name: "Exhaust Flap Always Open", desc: "Keep sport exhaust valve open in all drive modes", module: "01", coding: "Adaptation: Exhaust flap control → always open. May need security access.", type: "adapt", risk: "medium", compat: "b9" },
+  ]},
+  "19": { name: "CAN Gateway", address: "19", tweaks: [
+    { id: "start_stop_gateway", name: "Deactivate Start/Stop (Gateway)", desc: "Disable start/stop entirely via CAN Gateway", module: "19", coding: "Adaptation: IDE4159 → deactivation of start/stop function", type: "adapt", risk: "low", compat: "b9" },
+  ]},
+  "03": { name: "ABS Brakes / ESC", address: "03", security: "40168", tweaks: [
+    { id: "auto_park_brake", name: "Auto Parking Brake on Shutdown", desc: "Auto-engage parking brake when ignition off", module: "03", coding: "Security: 40168 → Adaptation: [IDE08134] Automatic Parking Brake → active", type: "adapt", risk: "low", compat: "b9" },
+  ]},
+  "13": { name: "Adaptive Cruise Control", address: "13", security: "20103", tweaks: [
+    { id: "acc_distance_menu", name: "ACC Default Distance in MMI", desc: "Enable MMI option to set default ACC distance. Turn off/on after.", module: "13", coding: "Adaptation: Distance basic setting option → On", type: "adapt", risk: "low", compat: "req:acc" },
+  ]},
+  "A5_sensor": { name: "Front Sensors / ADAS (A5)", address: "A5", security: "20103", tweaks: [
+    { id: "lane_assist", name: "Enable Lane Keep Assist", desc: "Activate lane departure warning for Premium Plus (no Driver Assist pkg). Multi-module coding.", module: "A5", coding: "Security: 20103 → HC → Coded, EFP → Coded. Adaptations across 5F, 17, 09, 44. See full guide.", type: "long", risk: "medium", compat: "b9" },
+    { id: "lane_delay", name: "Increase Lane Assist Delay", desc: "Extend hands-on-wheel warning. Late = 11-15s. May need clearer markings.", module: "A5", coding: "Security: 20103 → Directional stabilization assist driver intact deactiv threshold → late", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "44": { name: "Steering Assist / EPS", address: "44", tweaks: [
+    { id: "lane_assist_44", name: "Lane Assistant Steering", desc: "Enable lane assistant in EPS (part of full Lane Assist coding)", module: "44", coding: "heading_control_assistant → active. Adaptation: menu_display_Lane_Departure_Warning → Activated, LDW_HCA_0x19 → Activated, msg_bus → Terminal 15", type: "long", risk: "medium", compat: "b9" },
+  ]},
+  "36": { name: "Seat Adjustment (Driver)", address: "36", tweaks: [
+    { id: "easy_entry_36", name: "Easy Entry Seat Movement", desc: "Driver seat moves back for entry/exit. Also do Module 09 Byte 14 Bit 2.", module: "36", coding: "Easy_Entry_front/fond → Active, enabling_EasyEntry_front_seat_by_BCM → Active, Byte 14 Bit 2 → 1. Optional: Easy_Entry_veh_ksv/ee → Active", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "A9": { name: "Soundaktor / Engine Sound", address: "A9", tweaks: [
+    { id: "soundaktor_vol", name: "Adjust / Mute Soundaktor", desc: "Interior engine sound volume. 0 = mute, 100 = default.", module: "A9", coding: "Adaptation: Volume of structure borne noise actuator → 0 or desired", type: "adapt", risk: "low", compat: "b9" },
+  ]},
+  "CA": { name: "Sunroof", address: "CA", security: "20103", tweaks: [
+    { id: "sunroof_slide", name: "Sunroof Slide (not Tilt)", desc: "Comfort open slides instead of tilts", module: "CA", coding: "Adaptation: Komfortfunktionen → Target Position → Slid.position", type: "adapt", risk: "low", compat: "req:sunroof" },
+  ]},
+  "16": { name: "Steering Column Electronics", address: "16", tweaks: [
+    { id: "heated_wheel_temp", name: "Heated Steering Wheel Temp", desc: "Adjust heated wheel target temp (default 34°C). Set all 3 the same.", module: "16", coding: "Adaptation: 20527 steering wheel heater → adjust all 3", type: "adapt", risk: "low", compat: "b9" },
+  ]},
+  "82": { name: "Head-Up Display (HUD)", address: "82", tweaks: [
+    { id: "sport_hud", name: "Sport Display in HUD", desc: "Sport layout (lap timer, gear, oil temp) in HUD. Enable lap timer first.", module: "82", coding: "Long Coding: Laptimer_activated → available (Byte 2, Bit 4)", type: "long", risk: "low", compat: "req:hud" },
+  ]},
+  "DOOR": { name: "Door Electronics (L+R)", address: "42/52", tweaks: [
+    { id: "bo_light_off", name: "B&O Speaker Light Bar Off", desc: "Turn off white LED accent bar over B&O speaker grills", module: "42/52", coding: "Long Coding (each door): loudspeaker_gate_illumination → not_active", type: "long", risk: "low", compat: "req:bo" },
+  ]},
+  "06": { name: "Passenger Seat Adjustment", address: "06", tweaks: [
+    { id: "easy_entry_pass", name: "Easy Entry (Passenger)", desc: "Move passenger seat back on door open", module: "06", coding: "EasyEntry_two_door_vehicle → active, Easy_Entry_front/fond → active, enabling_EasyEntry_front_seat_by_BCM → active", type: "long", risk: "low", compat: "b9" },
+  ]},
+  "75": { name: "Telematics", address: "75", tweaks: [
+    { id: "telem_wireless", name: "Wireless CarPlay (Telematics)", desc: "Enable 5GHz WiFi for wireless CarPlay. MIB3/2020+ only.", module: "75", coding: "Adaptation: WLAN 5GHz → On + Apple CarPlay Wireless → On", type: "adapt", risk: "low", compat: "mib3" },
+  ]},
+};
+const POPULAR_IDS = ["exhaust_flap", "needle_sweep", "start_stop_off", "start_stop_gateway", "mirror_fold_46", "green_menu", "oil_temp", "accel_measure", "scandi_drl", "sidemarker_off", "vim", "seatbelt_off", "carplay_keyboard", "exit_sound"];
+
+// ── Vehicle Profile (from window sticker) ──
+const MY_CAR = {
+  year: 2019,
+  model: "RS5 Sportback",
+  trim: "Prestige",
+  platform: "B9",      // NOT B9.5
+  mib: "MIB2",         // NOT MIB3
+  vin: "WUABWCF5KA907586",
+  equipment: {
+    virtual_cockpit: true,
+    hud: true,
+    bo_audio: true,
+    driver_assist: true,   // ACC, Lane Assist, Traffic Jam Assist, Side Assist
+    drc: true,             // Dynamic Ride Control
+    sport_exhaust: true,
+    top_view_camera: true,
+    massage_seats: true,
+    ventilated_seats: true,
+    sunroof: true,
+    led_headlights: true,
+    matrix_led: false,
+    mib3: false,
+    wireless_carplay_native: false,
+  }
+};
+
+// Compatibility status for each tweak: "yes" | "no" | "maybe" | "check"
+// "yes" = confirmed works on this exact car
+// "no" = will NOT work (wrong hardware/platform)
+// "maybe" = should work but not confirmed on '19 RS5 specifically
+// "check" = depends on sub-option, verify in OBDeleven first
+function getCompat(id) {
+  const tw = allTweaks().find(t => t.id === id);
+  if (!tw || !tw.compat) return "b9";
+  return tw.compat;
+}
+function compatLabel(c) {
+  const info = COMPAT_LABELS[c];
+  return info ? info.label : c;
+}
+function compatColor(c) {
+  const info = COMPAT_LABELS[c];
+  return info ? info.color : "var(--text-dim)";
+}
+function isIncompat(c) {
+  return c === "b9.5" || c === "mib3";
+}
+
+// ── State ──
+let state = {
+  connected: false,
+  connecting: false,
+  deviceName: "",
+  logs: [],
+  termHistory: [],
+  queue: [],
+  applying: false,
+  applyLog: [],
+  error: "",
+  currentView: "home",
+  selectedModule: null,
+  searchQuery: "",
+  compatFilter: "",  // "" = all, "yes" | "maybe" | "no"
+  // Backup
+  backupRunning: false,
+  backupLog: [],
+  backupData: null,        // { timestamp, device, modules: { addr: { name, coding_hex, raw_responses } } }
+  restoreRunning: false,
+  restoreLog: [],
+};
+
+let writeChar = null;
+let notifyChar = null;
+let bleDevice = null;
+let bleServer = null;
+let responseBuffer = "";
+let responseResolve = null;
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+// ── Helpers ──
+const delay = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const allTweaks = () => Object.values(RS5_MODULES).flatMap(m => m.tweaks);
+const riskClass = r => `risk-${r}`;
+const ts = () => new Date().toLocaleTimeString();
+
+function addLog(msg, type = "info") {
+  state.logs.push({ msg, type, ts: Date.now() });
+  if (state.logs.length > 200) state.logs = state.logs.slice(-200);
+}
+
+// ── BLE ──
+async function connectBLE() {
+  if (!navigator.bluetooth) {
+    state.error = "Web Bluetooth not supported. Use Chrome/Edge on desktop or Android.";
+    render();
+    return;
+  }
+  state.connecting = true;
+  state.error = "";
+  render();
+
+  try {
+    let device;
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: "OBD" }, { namePrefix: "OBDII" }, { namePrefix: "V-LINK" },
+          { namePrefix: "IOS" }, { namePrefix: "Vgate" }, { namePrefix: "ELM" }
+        ],
+        optionalServices: BLE_SERVICES,
+      });
+    } catch {
+      device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: BLE_SERVICES,
+      });
+    }
+
+    bleDevice = device;
+    state.deviceName = device.name || "OBD Device";
+    addLog(`Found device: ${state.deviceName}`);
+
+    device.addEventListener("gattserverdisconnected", () => {
+      state.connected = false;
+      writeChar = null; notifyChar = null;
+      addLog("Device disconnected", "warn");
+      render();
+    });
+
+    const server = await device.gatt.connect();
+    bleServer = server;
+    addLog("GATT connected");
+
+    for (let i = 0; i < BLE_SERVICES.length; i++) {
+      try {
+        const svc = await server.getPrimaryService(BLE_SERVICES[i]);
+        addLog(`Found service: ${BLE_SERVICES[i].slice(0, 8)}...`);
+        try { writeChar = await svc.getCharacteristic(WRITE_CHARS[i]); } catch {}
+        try { notifyChar = await svc.getCharacteristic(NOTIFY_CHARS[i]); } catch {}
+        if (writeChar) break;
+      } catch {}
+    }
+
+    if (!writeChar) throw new Error("Could not find write characteristic. Try re-pairing the dongle.");
+
+    if (notifyChar) {
+      await notifyChar.startNotifications();
+      notifyChar.addEventListener("characteristicvaluechanged", e => {
+        const val = decoder.decode(e.target.value);
+        responseBuffer += val;
+        if (val.includes(">")) {
+          if (responseResolve) {
+            responseResolve(responseBuffer.replace(">", "").trim());
+            responseResolve = null;
+          }
+          responseBuffer = "";
+        }
+      });
+      addLog("Notifications enabled");
+    }
+
+    for (const cmd of ELM_INIT) {
+      const resp = await sendCommand(cmd, 1500);
+      addLog(`${cmd} → ${resp || "(ok)"}`, "cmd");
+    }
+
+    state.connected = true;
+    addLog("ELM327 initialized — ready", "success");
+  } catch (err) {
+    state.error = err.message;
+    addLog(`Connection failed: ${err.message}`, "error");
+  } finally {
+    state.connecting = false;
+    render();
+  }
+}
+
+async function sendCommand(cmd, timeout = 3000) {
+  if (!writeChar) return "";
+  responseBuffer = "";
+  const promise = new Promise(resolve => {
+    responseResolve = resolve;
+    setTimeout(() => {
+      if (responseResolve === resolve) {
+        resolve(responseBuffer.replace(">", "").trim());
+        responseResolve = null;
+        responseBuffer = "";
+      }
+    }, timeout);
+  });
+  await writeChar.writeValue(encoder.encode(cmd + "\r"));
+  return promise;
+}
+
+function disconnect() {
+  if (bleDevice?.gatt?.connected) bleDevice.gatt.disconnect();
+  state.connected = false;
+  writeChar = null; notifyChar = null;
+  addLog("Disconnected");
+  render();
+}
+
+// ── Queue ──
+function toggleQueue(tweakId) {
+  const tw = allTweaks().find(t => t.id === tweakId);
+  if (!tw) return;
+  const idx = state.queue.findIndex(t => t.id === tweakId);
+  if (idx >= 0) state.queue.splice(idx, 1);
+  else state.queue.push(tw);
+  render();
+}
+
+function isQueued(id) { return state.queue.some(t => t.id === id); }
+
+// ── Apply ──
+async function applyChanges() {
+  if (!state.connected || state.queue.length === 0) return;
+  state.applying = true;
+  state.applyLog = [];
+  state.currentView = "apply";
+  render();
+
+  const log = (m, t = "info") => { state.applyLog.push({ msg: m, type: t, ts: Date.now() }); render(); };
+
+  for (const tweak of [...state.queue]) {
+    log(`Applying: ${tweak.name}`);
+    try {
+      const diagResp = await sendCommand("10 03", 2000);
+      log(`Diag session → ${diagResp}`, "cmd");
+      const readResp = await sendCommand("22 F1 87", 3000);
+      log(`Read module ${tweak.module} → ${readResp}`, "cmd");
+      const writeCmd = `2E F1 87 ${tweak.byte.toString(16).padStart(2, "0")} ${tweak.value.toString(16).padStart(2, "0")}`;
+      const writeResp = await sendCommand(writeCmd, 3000);
+      log(`Write → ${writeResp}`, "cmd");
+      await sendCommand("10 01", 1500);
+      log(`✓ ${tweak.name} applied`, "success");
+    } catch (err) {
+      log(`✗ ${tweak.name} failed: ${err.message}`, "error");
+    }
+    await delay(500);
+  }
+  log("All changes processed. Cycle ignition to activate.", "success");
+  state.applying = false;
+  state.queue = [];
+  render();
+}
+
+// ── Terminal ──
+async function sendTerminal() {
+  const input = document.getElementById("term-input");
+  const cmd = input.value.trim().toUpperCase();
+  if (!cmd) return;
+  state.termHistory.push({ type: "cmd", text: cmd });
+  input.value = "";
+  render();
+  const resp = await sendCommand(cmd, 4000);
+  state.termHistory.push({ type: "resp", text: resp || "(no response)" });
+  render();
+  const box = document.getElementById("term-box");
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+function setTermInput(val) {
+  const input = document.getElementById("term-input");
+  if (input) { input.value = val; input.focus(); }
+}
+
+// ── Navigation ──
+function switchView(v) {
+  state.currentView = v;
+  state.selectedModule = null;
+  render();
+}
+
+function selectModule(addr) {
+  state.selectedModule = addr;
+  render();
+}
+
+function dismissWarning() {
+  document.getElementById("warning-screen").classList.add("hidden");
+  document.getElementById("main-app").classList.remove("hidden");
+  render();
+}
+
+// ── Backup / Restore ──
+// All B9 RS5 module addresses to scan (hex addresses for UDS)
+const BACKUP_MODULES = [
+  { addr: "01", hex: "01", name: "Engine ECU" },
+  { addr: "02", hex: "02", name: "Transmission" },
+  { addr: "03", hex: "03", name: "ABS Brakes / ESC" },
+  { addr: "08", hex: "08", name: "HVAC / Air Conditioning" },
+  { addr: "09", hex: "09", name: "Central Electronics" },
+  { addr: "0A", hex: "0A", name: "Instrument Alignment" },
+  { addr: "13", hex: "13", name: "Adaptive Cruise Control" },
+  { addr: "15", hex: "15", name: "Airbag" },
+  { addr: "16", hex: "16", name: "Steering Column Electronics" },
+  { addr: "17", hex: "17", name: "Instrument Cluster" },
+  { addr: "19", hex: "19", name: "CAN Gateway" },
+  { addr: "36", hex: "36", name: "Seat Adjustment (Driver)" },
+  { addr: "44", hex: "44", name: "Steering Assist" },
+  { addr: "46", hex: "46", name: "Central Convenience" },
+  { addr: "4B", hex: "4B", name: "Multifunction Module" },
+  { addr: "4F", hex: "4F", name: "Central Electrics 2" },
+  { addr: "42", hex: "42", name: "Left Door Electronics" },
+  { addr: "52", hex: "52", name: "Right Door Electronics" },
+  { addr: "55", hex: "55", name: "Headlight Range" },
+  { addr: "57", hex: "57", name: "TV Tuner" },
+  { addr: "5F", hex: "5F", name: "Information Control Unit" },
+  { addr: "65", hex: "65", name: "Tire Pressure" },
+  { addr: "6C", hex: "6C", name: "Rear Camera" },
+  { addr: "6D", hex: "6D", name: "Rear Camera 2" },
+  { addr: "76", hex: "76", name: "Parking Assist" },
+  { addr: "82", hex: "82", name: "Head-Up Display" },
+  { addr: "A5", hex: "A5", name: "Front Sensors / ADAS" },
+  { addr: "A9", hex: "A9", name: "Soundaktor" },
+  { addr: "CA", hex: "CA", name: "Sunroof" },
+  { addr: "06", hex: "06", name: "Passenger Seat" },
+  { addr: "75", hex: "75", name: "Telematics" },
+];
+
+async function runBackup() {
+  if (!state.connected) return;
+  state.backupRunning = true;
+  state.backupLog = [];
+  state.backupData = null;
+  render();
+
+  const log = (m, t = "info") => { state.backupLog.push({ msg: m, type: t, ts: Date.now() }); render(); };
+  const backup = {
+    timestamp: new Date().toISOString(),
+    vehicle: "2019 Audi RS5 B9 (US)",
+    device: state.deviceName,
+    vin: "",
+    modules: {},
+  };
+
+  log("Starting full ECU backup...", "info");
+  log("Reading VIN...", "info");
+
+  // Try to read VIN
+  try {
+    const vinResp = await sendCommand("0902", 4000);
+    if (vinResp && vinResp.length > 5) {
+      // Parse VIN from response (strip header bytes)
+      const cleanVin = vinResp.replace(/[^A-Z0-9]/g, "").slice(-17);
+      if (cleanVin.length === 17) {
+        backup.vin = cleanVin;
+        log(`VIN: ${cleanVin}`, "success");
+      } else {
+        log(`VIN response: ${vinResp}`, "cmd");
+      }
+    }
+  } catch (e) {
+    log("VIN read skipped", "warn");
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const mod of BACKUP_MODULES) {
+    log(`Reading module ${mod.addr} (${mod.name})...`, "info");
+
+    try {
+      // Set header to target module
+      const atsh = await sendCommand(`ATSH 7E0`, 1500);
+
+      // Open extended diagnostic session
+      const diag = await sendCommand(`10 03`, 2000);
+
+      // Read identification (F1 87 = VW Coding ID, F1 91 = VW Application Software Version)
+      const responses = {};
+
+      // Read long coding - try multiple identifiers
+      const identifiers = [
+        { did: "F1 87", label: "coding_id" },
+        { did: "F1 90", label: "vin_ecu" },
+        { did: "F1 91", label: "sw_version" },
+        { did: "F1 A2", label: "long_coding" },
+        { did: "06 00", label: "coding_value" },
+      ];
+
+      for (const ident of identifiers) {
+        try {
+          const resp = await sendCommand(`22 ${ident.did}`, 3000);
+          if (resp && !resp.includes("ERROR") && !resp.includes("NO DATA") && resp.length > 2) {
+            responses[ident.label] = resp;
+          }
+        } catch {}
+      }
+
+      // Also try the raw long coding read (Mode 01)
+      try {
+        const rawCoding = await sendCommand(`09 04`, 3000);
+        if (rawCoding && !rawCoding.includes("ERROR") && !rawCoding.includes("NO DATA")) {
+          responses["raw_coding"] = rawCoding;
+        }
+      } catch {}
+
+      // Close session
+      await sendCommand(`10 01`, 1500);
+
+      if (Object.keys(responses).length > 0) {
+        backup.modules[mod.addr] = {
+          name: mod.name,
+          address: mod.addr,
+          responses: responses,
+          backed_up_at: new Date().toISOString(),
+        };
+        successCount++;
+        const keys = Object.keys(responses).join(", ");
+        log(`✓ ${mod.addr} ${mod.name} — saved (${keys})`, "success");
+      } else {
+        failCount++;
+        log(`⊘ ${mod.addr} ${mod.name} — no data (module may not respond on this channel)`, "warn");
+      }
+    } catch (err) {
+      failCount++;
+      log(`✗ ${mod.addr} ${mod.name} — ${err.message}`, "error");
+    }
+    await delay(300);
+  }
+
+  backup.summary = { total_scanned: BACKUP_MODULES.length, success: successCount, failed: failCount };
+  state.backupData = backup;
+  state.backupRunning = false;
+
+  log("", "info");
+  log(`Backup complete: ${successCount} modules saved, ${failCount} skipped/failed`, "success");
+  log("Download the backup file and keep it safe before making any changes.", "info");
+  render();
+}
+
+function downloadBackup() {
+  if (!state.backupData) return;
+  const json = JSON.stringify(state.backupData, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const vin = state.backupData.vin ? `_${state.backupData.vin}` : "";
+  a.href = url;
+  a.download = `RS5_B9_backup${vin}_${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function triggerRestoreUpload() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.modules || !data.timestamp) {
+        alert("Invalid backup file. Must be a VAG Coder backup JSON.");
+        return;
+      }
+      state.backupData = data;
+      render();
+      if (confirm(`Loaded backup from ${data.timestamp}\n${data.vehicle || "Unknown"}\nVIN: ${data.vin || "N/A"}\n\n${Object.keys(data.modules).length} modules found.\n\nReady to view. To restore, connect to the car first.`)) {
+        // Just loaded for viewing
+      }
+    } catch (err) {
+      alert("Failed to parse backup file: " + err.message);
+    }
+  };
+  input.click();
+}
+
+async function restoreFromBackup() {
+  if (!state.connected || !state.backupData) return;
+  if (!confirm("⚠ WARNING: This will attempt to write stored coding back to your ECUs.\n\nMake sure ignition is ON, engine OFF, and hood is unlatched.\n\nProceed?")) return;
+
+  state.restoreRunning = true;
+  state.restoreLog = [];
+  render();
+
+  const log = (m, t = "info") => { state.restoreLog.push({ msg: m, type: t, ts: Date.now() }); render(); };
+  const modules = state.backupData.modules;
+
+  log("Starting restore from backup...", "info");
+
+  for (const [addr, mod] of Object.entries(modules)) {
+    log(`Restoring module ${addr} (${mod.name})...`, "info");
+    try {
+      await sendCommand(`10 03`, 2000);
+
+      // Write back any coding values we have
+      if (mod.responses.long_coding) {
+        const writeResp = await sendCommand(`2E F1 A2 ${mod.responses.long_coding}`, 4000);
+        log(`Write F1 A2 → ${writeResp}`, "cmd");
+      }
+      if (mod.responses.coding_value) {
+        const writeResp = await sendCommand(`2E 06 00 ${mod.responses.coding_value}`, 4000);
+        log(`Write 06 00 → ${writeResp}`, "cmd");
+      }
+      if (mod.responses.coding_id) {
+        const writeResp = await sendCommand(`2E F1 87 ${mod.responses.coding_id}`, 4000);
+        log(`Write F1 87 → ${writeResp}`, "cmd");
+      }
+
+      await sendCommand(`10 01`, 1500);
+      log(`✓ ${addr} ${mod.name} restore attempted`, "success");
+    } catch (err) {
+      log(`✗ ${addr} ${mod.name} — ${err.message}`, "error");
+    }
+    await delay(500);
+  }
+
+  log("Restore complete. Cycle ignition to apply changes.", "success");
+  state.restoreRunning = false;
+  render();
+}
+
+// ── Log color ──
+function logColor(type) {
+  switch(type) {
+    case "error": return "var(--red)";
+    case "success": return "var(--green)";
+    case "warn": return "var(--yellow)";
+    case "cmd": return "var(--blue)";
+    default: return "var(--text-muted)";
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function render() {
+  // Status
+  const dot = document.getElementById("status-dot");
+  const stxt = document.getElementById("status-text");
+  dot.className = "status-dot" + (state.connected ? " on" : "");
+  stxt.className = "status-text" + (state.connected ? " on" : "");
+  stxt.textContent = state.connected ? state.deviceName : "NOT CONNECTED";
+
+  // Queue nav button
+  const qBtn = document.getElementById("queue-nav-btn");
+  if (state.queue.length > 0) {
+    qBtn.classList.remove("hidden");
+    qBtn.textContent = `Queue (${state.queue.length})`;
+  } else {
+    qBtn.classList.add("hidden");
+  }
+
+  // Nav active
+  document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
+    b.classList.toggle("active", b.dataset.view === state.currentView);
+  });
+
+  // Views
+  ["home", "modules", "backup", "terminal", "apply"].forEach(v => {
+    document.getElementById(`view-${v}`).classList.toggle("hidden", v !== state.currentView);
+  });
+
+  // Render active view
+  if (state.currentView === "home") renderHome();
+  else if (state.currentView === "modules") renderModules();
+  else if (state.currentView === "backup") renderBackup();
+  else if (state.currentView === "terminal") renderTerminal();
+  else if (state.currentView === "apply") renderApply();
+}
+
+function renderHome() {
+  const el = document.getElementById("view-home");
+  if (!state.connected) {
+    el.innerHTML = `
+      <div class="connect-card">
+        <div class="icon">⬡</div>
+        <h2>Connect Your OBDeleven</h2>
+        <p>Make sure your dongle is plugged into the OBD-II port and ignition is ON. Use Chrome or Edge.</p>
+        ${state.error ? `<div class="error-box">${esc(state.error)}</div>` : ""}
+        <button class="btn-primary" onclick="connectBLE()" ${state.connecting ? "disabled" : ""}>
+          ${state.connecting ? "Scanning…" : "Scan & Connect"}
+        </button>
+      </div>
+      ${renderLogs()}
+    `;
+  } else {
+    const popular = allTweaks().filter(t => POPULAR_IDS.includes(t.id));
+    const compatYes = allTweaks().filter(t => getCompat(t.id) === "yes").length;
+    const compatNo = allTweaks().filter(t => getCompat(t.id) === "no").length;
+    const compatMaybe = allTweaks().filter(t => getCompat(t.id) === "maybe").length;
+    el.innerHTML = `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px">
+        <div style="font-size:28px;opacity:0.3">⬡</div>
+        <div style="flex:1">
+          <div style="font-size:14px;color:var(--text-bright);font-weight:700">${MY_CAR.year} ${MY_CAR.model}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${MY_CAR.trim} · ${MY_CAR.platform} · ${MY_CAR.mib} · VIN …${MY_CAR.vin.slice(-6)}</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:2px">B&O 3D · HUD · ACC · DRC · Sport Exhaust · Massage · Sunroof</div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-value" style="color:var(--green)">${compatYes}</div><div class="stat-label">Compatible</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--yellow)">${compatMaybe}</div><div class="stat-label">Verify</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--red)">${compatNo}</div><div class="stat-label">Not Compat.</div></div>
+        <div class="stat-card"><div class="stat-value" style="color:var(--brass)">${state.queue.length}</div><div class="stat-label">Queued</div></div>
+      </div>
+      <div class="mt-24">
+        <h3 class="section-title">Quick Add — Popular</h3>
+        ${popular.map(renderTweakRow).join("")}
+      </div>
+      ${state.queue.length > 0 ? `<button class="btn-primary w-full mt-24" onclick="applyChanges()">Apply ${state.queue.length} Change${state.queue.length>1?"s":""}</button>` : ""}
+      <button class="btn-danger w-full mt-12" onclick="disconnect()">Disconnect</button>
+      ${renderLogs()}
+    `;
+  }
+}
+
+function renderTweakRow(tw) {
+  const q = isQueued(tw.id);
+  const c = tw.compat || "b9";
+  const no = isIncompat(c);
+  return `
+    <div class="tweak-row" ${no ? 'style="opacity:0.4"' : ""}>
+      <div class="tweak-info">
+        <div class="tweak-name-line">
+          <span class="tweak-name">${esc(tw.name)}</span>
+          <span class="risk-badge ${riskClass(tw.risk)}">${tw.risk}</span>
+          <span style="font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;color:${compatColor(c)};background:${(COMPAT_LABELS[c]||{}).bg||'transparent'}">${compatLabel(c)}</span>
+        </div>
+        <div class="tweak-desc">${esc(tw.desc)}</div>
+      </div>
+      ${no ? `<span style="font-size:10px;color:var(--red)">N/A</span>` : `
+        <button class="${q ? "btn-queued" : "btn-add"}" onclick="toggleQueue('${tw.id}')">
+          ${q ? "Queued ✓" : "+ Add"}
+        </button>
+      `}
+    </div>
+  `;
+}
+
+function renderTweakRowFull(tw) {
+  const q = isQueued(tw.id);
+  const c = tw.compat || "b9";
+  const no = isIncompat(c);
+  const typeLabel = tw.type === "adapt" ? "ADAPTATION" : "LONG CODING";
+  return `
+    <div class="tweak-row" style="flex-direction:column;align-items:stretch;gap:8px;${no ? "opacity:0.4;" : ""}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="tweak-info">
+          <div class="tweak-name-line">
+            <span class="tweak-name">${esc(tw.name)}</span>
+            <span class="risk-badge ${riskClass(tw.risk)}">${tw.risk}</span>
+            <span style="font-size:9px;color:var(--blue);letter-spacing:1px">${typeLabel}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+            <span style="font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;color:${compatColor(c)};background:${(COMPAT_LABELS[c]||{}).bg||'transparent'}">${compatLabel(c)}</span>
+          </div>
+          <div class="tweak-desc">${esc(tw.desc)}</div>
+        </div>
+        ${no ? `<span style="font-size:10px;color:var(--red);white-space:nowrap">N/A</span>` : `
+          <button class="${q ? "btn-queued" : "btn-add"}" onclick="toggleQueue('${tw.id}')">
+            ${q ? "Queued ✓" : "+ Add"}
+          </button>
+        `}
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);background:#1a1814;padding:6px 10px;border-radius:4px;line-height:1.6;word-break:break-word">${esc(tw.coding)}</div>
+    </div>
+  `;
+}
+
+function renderLogs() {
+  if (state.logs.length === 0) return "";
+  return `
+    <div class="mt-24">
+      <h3 class="section-title">Connection Log</h3>
+      <div class="log-box">
+        ${state.logs.slice(-30).map(l => `
+          <div class="log-line" style="color:${logColor(l.type)}">
+            <span class="log-ts">${new Date(l.ts).toLocaleTimeString()}</span>${esc(l.msg)}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderModules() {
+  const el = document.getElementById("view-modules");
+  const totalTweaks = allTweaks().length;
+  const totalModules = Object.keys(RS5_MODULES).length;
+
+  if (!state.selectedModule) {
+    // Search across all modules
+    const q = state.searchQuery.toLowerCase();
+    let searchResults = "";
+    if (q.length >= 2) {
+      const matches = allTweaks().filter(t =>
+        t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q) || t.coding.toLowerCase().includes(q) || t.module.toLowerCase().includes(q)
+      );
+      if (matches.length > 0) {
+        searchResults = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${matches.length} result${matches.length!==1?"s":""}</div>` + matches.map(renderTweakRowFull).join("");
+      } else {
+        searchResults = `<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:20px">No tweaks found for "${esc(state.searchQuery)}"</div>`;
+      }
+    }
+
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 class="section-title" style="margin:0">${totalModules} ECU Modules</h3>
+        <span style="font-size:11px;color:var(--brass)">${totalTweaks} tweaks total</span>
+      </div>
+      <input class="search-input" id="module-search" type="text" placeholder="Search all tweaks… (e.g. DRL, exhaust, mirror, lane)" value="${esc(state.searchQuery)}" oninput="state.searchQuery=this.value;render()">
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="quick-cmd" style="font-family:var(--font-body);${state.compatFilter===''?'border-color:var(--brass);color:var(--text-bright)':''}" onclick="state.compatFilter='';render()">All (${totalTweaks})</button>
+        <button class="quick-cmd" style="font-family:var(--font-body);${state.compatFilter==='yes'?'border-color:var(--green);color:var(--green)':''}" onclick="state.compatFilter='yes';render()">✓ My Car (${allTweaks().filter(t=>getCompat(t.id)==='yes').length})</button>
+        <button class="quick-cmd" style="font-family:var(--font-body);${state.compatFilter==='maybe'?'border-color:var(--yellow);color:var(--yellow)':''}" onclick="state.compatFilter='maybe';render()">? Verify (${allTweaks().filter(t=>getCompat(t.id)==='maybe').length})</button>
+        <button class="quick-cmd" style="font-family:var(--font-body);${state.compatFilter==='no'?'border-color:var(--red);color:var(--red)':''}" onclick="state.compatFilter='no';render()">✗ N/A (${allTweaks().filter(t=>getCompat(t.id)==='no').length})</button>
+      </div>
+      ${q.length >= 2 ? searchResults : state.compatFilter ? 
+        (() => {
+          const filtered = allTweaks().filter(t => getCompat(t.id) === state.compatFilter);
+          return `<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">${filtered.length} tweak${filtered.length!==1?"s":""}</div>` + filtered.map(renderTweakRowFull).join("");
+        })()
+      : Object.entries(RS5_MODULES).map(([addr, mod]) => `
+        <div class="module-card" onclick="selectModule('${addr}')">
+          <div class="module-addr">${addr}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;color:var(--text-bright)">${esc(mod.name)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${mod.tweaks.length} tweak${mod.tweaks.length!==1?"s":""} available${mod.security ? ' · PIN: '+mod.security : ''}</div>
+          </div>
+          <div class="module-arrow">→</div>
+        </div>
+      `).join("")}
+    `;
+    // Keep focus on search input
+    if (q.length > 0) {
+      const inp = document.getElementById("module-search");
+      if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    }
+  } else {
+    const mod = RS5_MODULES[state.selectedModule];
+    el.innerHTML = `
+      <button class="btn-back" onclick="state.selectedModule=null;render()">← Back to Modules</button>
+      <div class="module-header">
+        <div class="module-addr">${state.selectedModule}</div>
+        <div>
+          <h3>${esc(mod.name)}</h3>
+          ${mod.security ? `<div style="font-size:10px;color:var(--yellow);margin-top:4px">Security Access PIN: ${mod.security}</div>` : ""}
+        </div>
+      </div>
+      ${mod.tweaks.map(renderTweakRowFull).join("")}
+    `;
+  }
+}
+
+function renderTerminal() {
+  const el = document.getElementById("view-terminal");
+  const quickCmds = ["ATI", "ATZ", "ATRV", "0100", "010C", "010D", "22 F1 87", "10 03", "10 01"];
+  el.innerHTML = `
+    <h3 class="section-title">Raw Command Terminal</h3>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:16px">
+      Send ELM327 AT commands or raw UDS hex. Examples: ATI, 0100, 22 F1 87
+    </p>
+    <div class="term-box" id="term-box">
+      ${state.termHistory.map(h => `
+        <div class="term-line" style="color:${h.type==="cmd"?"var(--blue)":"var(--green)"}">
+          ${h.type==="cmd"?"→ ":"← "}${esc(h.text)}
+        </div>
+      `).join("")}
+    </div>
+    <div class="term-input-row">
+      <input class="term-input" id="term-input" placeholder="${state.connected?"Type command…":"Connect first"}" ${state.connected?"":"disabled"} onkeydown="if(event.key==='Enter')sendTerminal()">
+      <button class="btn-primary" onclick="sendTerminal()" ${state.connected?"":"disabled"}>Send</button>
+    </div>
+    <div class="mt-16">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Quick Commands</div>
+      <div class="quick-cmds">
+        ${quickCmds.map(c => `<button class="quick-cmd" onclick="setTermInput('${c}')">${c}</button>`).join("")}
+      </div>
+    </div>
+  `;
+  const box = document.getElementById("term-box");
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+function renderApply() {
+  const el = document.getElementById("view-apply");
+  let html = "";
+
+  if (state.queue.length > 0 && !state.applying) {
+    html += `<h3 class="section-title">Review Queue</h3>`;
+    html += state.queue.map(tw => `
+      <div class="tweak-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="tweak-info">
+            <div class="tweak-name-line">
+              <span class="tweak-name">${esc(tw.name)}</span>
+              <span class="risk-badge ${riskClass(tw.risk)}">${tw.risk}</span>
+              <span style="font-size:9px;color:var(--blue);letter-spacing:1px">${tw.type === "adapt" ? "ADAPTATION" : "LONG CODING"}</span>
+            </div>
+            <div class="tweak-desc">Module ${tw.module} · ${esc(tw.desc)}</div>
+          </div>
+          <button class="btn-remove" onclick="toggleQueue('${tw.id}')">✕</button>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);background:#1a1814;padding:6px 10px;border-radius:4px;line-height:1.6;word-break:break-word">${esc(tw.coding)}</div>
+      </div>
+    `).join("");
+    html += `<button class="btn-primary w-full mt-20" onclick="applyChanges()" ${state.connected?"":"disabled"}>
+      ${state.connected ? `Send ${state.queue.length} Change${state.queue.length>1?"s":""}` : "Connect First"}
+    </button>`;
+    html += `<p style="font-size:10px;color:var(--text-dim);margin-top:10px;text-align:center">Adaptations require the OBDeleven app protocol. Use Terminal for raw UDS commands, or reference the coding instructions above.</p>`;
+  } else if (state.applying) {
+    html += `<h3 class="section-title">Applying Changes…</h3>`;
+  } else {
+    html += `<h3 class="section-title">Apply Results</h3>`;
+  }
+
+  if (state.applyLog.length > 0) {
+    html += `
+      <div class="log-box ${state.queue.length > 0 ? "mt-20" : ""}">
+        ${state.applyLog.map(l => `
+          <div class="log-line" style="color:${logColor(l.type)}">${esc(l.msg)}</div>
+        `).join("")}
+      </div>
+    `;
+  }
+  el.innerHTML = html;
+}
+
+// Initial render handled by dismissWarning
+
+function renderBackup() {
+  const el = document.getElementById("view-backup");
+  let html = "";
+
+  html += `
+    <h3 class="section-title">Backup & Restore</h3>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-size:14px;color:var(--text-bright);margin-bottom:8px">📦 Full ECU Backup</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">
+        Reads long coding data from all ${BACKUP_MODULES.length} known B9 RS5 modules and saves to a JSON file.
+        <strong>Always do this before making any changes.</strong>
+        Ignition must be ON and hood unlatched.
+      </div>
+      <button class="btn-primary w-full" onclick="runBackup()" ${!state.connected || state.backupRunning ? "disabled" : ""}>
+        ${state.backupRunning ? "Backing up…" : !state.connected ? "Connect First" : "Start Full Backup"}
+      </button>
+    </div>
+  `;
+
+  // Backup log
+  if (state.backupLog.length > 0) {
+    html += `
+      <div class="log-box" style="max-height:280px;margin-bottom:16px">
+        ${state.backupLog.map(l => `
+          <div class="log-line" style="color:${logColor(l.type)}">${esc(l.msg)}</div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  // Download button
+  if (state.backupData && !state.backupRunning) {
+    const modCount = Object.keys(state.backupData.modules).length;
+    html += `
+      <div style="background:var(--bg3);border:1px solid var(--green);border-radius:10px;padding:16px;margin-bottom:16px">
+        <div style="font-size:13px;color:var(--green);margin-bottom:4px">✓ Backup Ready</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">
+          ${state.backupData.timestamp} · ${modCount} module${modCount!==1?"s":""} saved
+          ${state.backupData.vin ? ` · VIN: ${state.backupData.vin}` : ""}
+        </div>
+        <button class="btn-primary w-full mt-12" onclick="downloadBackup()">
+          ⬇ Download Backup File
+        </button>
+      </div>
+    `;
+
+    // Show what was backed up
+    html += `<div style="margin-bottom:16px">`;
+    html += `<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">BACKED UP MODULES</div>`;
+    for (const [addr, mod] of Object.entries(state.backupData.modules)) {
+      const keys = Object.keys(mod.responses);
+      html += `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;margin-bottom:4px">
+          <div class="module-addr" style="font-size:11px;padding:4px 8px">${addr}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;color:var(--text-bright)">${esc(mod.name)}</div>
+            <div style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono)">${keys.join(", ")}</div>
+          </div>
+          <div style="font-size:10px;color:var(--green)">✓</div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+  }
+
+  // Restore section
+  html += `
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+        <div style="font-size:14px;color:var(--text-bright);margin-bottom:8px">🔄 Restore from Backup</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">
+          Load a previously saved backup file and write the coding data back to the car. Use this to revert changes if something goes wrong.
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-add" style="flex:1;padding:10px" onclick="triggerRestoreUpload()">
+            Load Backup File
+          </button>
+          <button class="btn-danger" style="flex:1;padding:10px" onclick="restoreFromBackup()" ${!state.connected || !state.backupData || state.restoreRunning ? "disabled" : ""}>
+            ${state.restoreRunning ? "Restoring…" : "Write to Car"}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Restore log
+  if (state.restoreLog.length > 0) {
+    html += `
+      <div class="log-box" style="max-height:200px">
+        ${state.restoreLog.map(l => `
+          <div class="log-line" style="color:${logColor(l.type)}">${esc(l.msg)}</div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  el.innerHTML = html;
+}
+</script>
+</body>
+</html>
