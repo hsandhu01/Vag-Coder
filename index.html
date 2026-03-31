@@ -679,23 +679,57 @@ async function applyChanges() {
   const log = (m, t = "info") => { state.applyLog.push({ msg: m, type: t, ts: Date.now() }); render(); };
 
   for (const tweak of [...state.queue]) {
-    log(`Applying: ${tweak.name}`);
+    // Resolve the module address (handle "42/52" door module case)
+    let modAddr = tweak.module;
+    if (modAddr.includes("/")) modAddr = modAddr.split("/")[0]; // use first
+
+    const canInfo = CAN_MAP[modAddr];
+    if (!canInfo) {
+      log(`⊘ ${tweak.name} — no CAN mapping for module ${modAddr}`, "warn");
+      continue;
+    }
+
+    log(`[${modAddr}] Routing to ${canInfo.name} (CAN ${canInfo.tx}→${canInfo.rx})`, "info");
+
     try {
-      const diagResp = await sendCommand("10 03", 2000);
-      log(`Diag session → ${diagResp}`, "cmd");
-      const readResp = await sendCommand("22 F1 87", 3000);
-      log(`Read module ${tweak.module} → ${readResp}`, "cmd");
-      const writeCmd = `2E F1 87 ${tweak.byte.toString(16).padStart(2, "0")} ${tweak.value.toString(16).padStart(2, "0")}`;
-      const writeResp = await sendCommand(writeCmd, 3000);
-      log(`Write → ${writeResp}`, "cmd");
+      // Route to the correct module
+      await switchToModule(modAddr);
+
+      // Open extended diagnostic session
+      const diagResp = await sendCommand("10 03", 3000);
+      log(`  Session → ${diagResp || "(timeout)"}`, "cmd");
+
+      if (!diagResp || diagResp.includes("NO DATA") || diagResp.includes("ERROR")) {
+        log(`✗ ${tweak.name} — module ${modAddr} did not respond`, "error");
+        await resetELM();
+        continue;
+      }
+
+      // Read current long coding
+      const readResp = await sendCommand("22 F1 87", 4000);
+      log(`  Read coding → ${readResp || "(no data)"}`, "cmd");
+
+      // Read coding binary if available
+      const codingResp = await sendCommand("22 F1 DF", 4000);
+      if (codingResp && !codingResp.includes("ERROR") && !codingResp.includes("NO DATA")) {
+        log(`  Coding binary → ${codingResp}`, "cmd");
+      }
+
+      log(`  ⚡ ${tweak.name}: ${tweak.coding}`, "info");
+      log(`  Module ${modAddr} is now accessible for coding.`, "success");
+      log(`  Use the coding instructions above to make the change.`, "info");
+
+      // Close session
       await sendCommand("10 01", 1500);
-      log(`✓ ${tweak.name} applied`, "success");
+      await resetELM();
     } catch (err) {
       log(`✗ ${tweak.name} failed: ${err.message}`, "error");
+      await resetELM();
     }
     await delay(500);
   }
-  log("All changes processed. Cycle ignition to activate.", "success");
+  log("", "info");
+  log("All modules accessed. Cycle ignition to activate any changes.", "success");
   state.applying = false;
   state.queue = [];
   render();
@@ -741,39 +775,69 @@ function dismissWarning() {
 
 // ── Backup / Restore ──
 // All B9 RS5 module addresses to scan (hex addresses for UDS)
-const BACKUP_MODULES = [
-  { addr: "01", hex: "01", name: "Engine ECU" },
-  { addr: "02", hex: "02", name: "Transmission" },
-  { addr: "03", hex: "03", name: "ABS Brakes / ESC" },
-  { addr: "08", hex: "08", name: "HVAC / Air Conditioning" },
-  { addr: "09", hex: "09", name: "Central Electronics" },
-  { addr: "0A", hex: "0A", name: "Instrument Alignment" },
-  { addr: "13", hex: "13", name: "Adaptive Cruise Control" },
-  { addr: "15", hex: "15", name: "Airbag" },
-  { addr: "16", hex: "16", name: "Steering Column Electronics" },
-  { addr: "17", hex: "17", name: "Instrument Cluster" },
-  { addr: "19", hex: "19", name: "CAN Gateway" },
-  { addr: "36", hex: "36", name: "Seat Adjustment (Driver)" },
-  { addr: "44", hex: "44", name: "Steering Assist" },
-  { addr: "46", hex: "46", name: "Central Convenience" },
-  { addr: "4B", hex: "4B", name: "Multifunction Module" },
-  { addr: "4F", hex: "4F", name: "Central Electrics 2" },
-  { addr: "42", hex: "42", name: "Left Door Electronics" },
-  { addr: "52", hex: "52", name: "Right Door Electronics" },
-  { addr: "55", hex: "55", name: "Headlight Range" },
-  { addr: "57", hex: "57", name: "TV Tuner" },
-  { addr: "5F", hex: "5F", name: "Information Control Unit" },
-  { addr: "65", hex: "65", name: "Tire Pressure" },
-  { addr: "6C", hex: "6C", name: "Rear Camera" },
-  { addr: "6D", hex: "6D", name: "Rear Camera 2" },
-  { addr: "76", hex: "76", name: "Parking Assist" },
-  { addr: "82", hex: "82", name: "Head-Up Display" },
-  { addr: "A5", hex: "A5", name: "Front Sensors / ADAS" },
-  { addr: "A9", hex: "A9", name: "Soundaktor" },
-  { addr: "CA", hex: "CA", name: "Sunroof" },
-  { addr: "06", hex: "06", name: "Passenger Seat" },
-  { addr: "75", hex: "75", name: "Telematics" },
-];
+// ── VAG UDS CAN Address Map (from ODIS extraction) ──
+// Each module has a specific CAN request/response ID pair
+// ATSH sets the request header, ATCRA filters the response
+const CAN_MAP = {
+  "01": { tx: "7E0", rx: "7E8", name: "Engine ECU" },
+  "02": { tx: "7E1", rx: "7E9", name: "Transmission" },
+  "03": { tx: "713", rx: "77D", name: "ABS Brakes / ESC" },
+  "06": { tx: "74D", rx: "7B7", name: "Passenger Seat" },
+  "08": { tx: "746", rx: "7B0", name: "HVAC / Air Conditioning" },
+  "09": { tx: "70E", rx: "778", name: "Central Electronics" },
+  "13": { tx: "757", rx: "7C1", name: "Adaptive Cruise Control" },
+  "15": { tx: "715", rx: "77F", name: "Airbag" },
+  "16": { tx: "70C", rx: "776", name: "Steering Column Electronics" },
+  "17": { tx: "714", rx: "77E", name: "Instrument Cluster" },
+  "19": { tx: "710", rx: "77A", name: "CAN Gateway" },
+  "36": { tx: "74C", rx: "7B6", name: "Seat Adjustment (Driver)" },
+  "42": { tx: "74A", rx: "7B4", name: "Door Electronics (Driver)" },
+  "44": { tx: "712", rx: "77C", name: "Steering Assist" },
+  "46": { tx: "70D", rx: "777", name: "Central Convenience" },
+  "4F": { tx: "745", rx: "7AF", name: "Central Comfort 2" },
+  "52": { tx: "74B", rx: "7B5", name: "Door Electronics (Passenger)" },
+  "55": { tx: "754", rx: "7BE", name: "Headlight Range" },
+  "57": { tx: "76D", rx: "7D7", name: "TV Tuner" },
+  "5F": { tx: "773", rx: "7DD", name: "Information Control Unit" },
+  "65": { tx: "70B", rx: "775", name: "Tire Pressure" },
+  "6C": { tx: "769", rx: "7D3", name: "Rear Camera" },
+  "6D": { tx: "723", rx: "78D", name: "Deck Lid / Trunk" },
+  "75": { tx: "767", rx: "7D1", name: "Telematics" },
+  "76": { tx: "70A", rx: "774", name: "Parking Assist" },
+  "82": { tx: "71B", rx: "785", name: "Head-Up Display" },
+  "A5": { tx: "74F", rx: "7B9", name: "Front Sensors / ADAS" },
+  "A9": { tx: "71C", rx: "786", name: "Soundaktor" },
+  "CA": { tx: "72D", rx: "797", name: "Sunroof / Electric Roof" },
+};
+
+// Helper: switch ELM327 to target a specific module
+async function switchToModule(moduleAddr) {
+  const mod = CAN_MAP[moduleAddr];
+  if (!mod) return false;
+  // Set transmit header
+  await sendCommand(`ATSH ${mod.tx}`, 1000);
+  // Set receive filter to only this module's responses
+  await sendCommand(`ATCRA ${mod.rx}`, 1000);
+  // Flow control header matches transmit
+  await sendCommand(`ATFCSH ${mod.tx}`, 1000);
+  // Flow control data: standard flow control (continue, no delay, send all)
+  await sendCommand(`ATFCSD 30 00 00`, 1000);
+  // Enable flow control
+  await sendCommand(`ATFCSM 1`, 1000);
+  await delay(50);
+  return true;
+}
+
+// Helper: reset ELM to default state
+async function resetELM() {
+  await sendCommand(`ATCRA`, 1000);  // clear receive filter
+  await sendCommand(`ATSH 7DF`, 1000);  // reset to functional broadcast
+  await sendCommand(`ATFCSM 0`, 1000);  // disable custom flow control
+}
+
+const BACKUP_MODULES = Object.entries(CAN_MAP).map(([addr, info]) => ({
+  addr, ...info
+}));
 
 async function runBackup() {
   if (!state.connected) return;
@@ -791,20 +855,20 @@ async function runBackup() {
     modules: {},
   };
 
-  log("Starting full ECU backup...", "info");
+  log("Starting full ECU backup with CAN routing...", "info");
   log("Reading VIN...", "info");
 
-  // Try to read VIN
+  // Read VIN via standard OBD
   try {
-    const vinResp = await sendCommand("0902", 4000);
+    await sendCommand("ATSH 7DF", 1000);
+    const vinResp = await sendCommand("0902", 5000);
     if (vinResp && vinResp.length > 5) {
-      // Parse VIN from response (strip header bytes)
-      const cleanVin = vinResp.replace(/[^A-Z0-9]/g, "").slice(-17);
+      const cleanVin = vinResp.replace(/[\s\r\n]/g, "").replace(/[^A-Z0-9]/gi, "").slice(-17);
       if (cleanVin.length === 17) {
         backup.vin = cleanVin;
         log(`VIN: ${cleanVin}`, "success");
       } else {
-        log(`VIN response: ${vinResp}`, "cmd");
+        log(`VIN raw: ${vinResp.slice(0, 60)}`, "cmd");
       }
     }
   } catch (e) {
@@ -815,66 +879,75 @@ async function runBackup() {
   let failCount = 0;
 
   for (const mod of BACKUP_MODULES) {
-    log(`Reading module ${mod.addr} (${mod.name})...`, "info");
+    log(`[${mod.addr}] ${mod.name} — routing to CAN ${mod.tx}→${mod.rx}...`, "info");
 
     try {
-      // Set header to target module
-      const atsh = await sendCommand(`ATSH 7E0`, 1500);
+      // Route ELM to this specific module
+      const routed = await switchToModule(mod.addr);
+      if (!routed) { failCount++; log(`⊘ ${mod.addr} — no CAN mapping`, "warn"); continue; }
 
       // Open extended diagnostic session
-      const diag = await sendCommand(`10 03`, 2000);
+      const diag = await sendCommand("10 03", 3000);
+      log(`  Session → ${diag || "(timeout)"}`, "cmd");
 
-      // Read identification (F1 87 = VW Coding ID, F1 91 = VW Application Software Version)
+      // Check if module responded (positive response starts with 50)
+      if (!diag || diag.includes("NO DATA") || diag.includes("ERROR") || diag.includes("UNABLE")) {
+        failCount++;
+        log(`⊘ ${mod.addr} ${mod.name} — no response on CAN ${mod.tx}`, "warn");
+        await resetELM();
+        continue;
+      }
+
       const responses = {};
+      responses["diag_session"] = diag;
 
-      // Read long coding - try multiple identifiers
-      const identifiers = [
-        { did: "F1 87", label: "coding_id" },
+      // Read key identifiers
+      const dids = [
+        { did: "F1 87", label: "vw_coding_id" },
         { did: "F1 90", label: "vin_ecu" },
         { did: "F1 91", label: "sw_version" },
         { did: "F1 A2", label: "long_coding" },
-        { did: "06 00", label: "coding_value" },
+        { did: "F1 DF", label: "coding_binary" },
+        { did: "06 00", label: "coding_06" },
+        { did: "F1 8C", label: "serial_number" },
       ];
 
-      for (const ident of identifiers) {
+      for (const d of dids) {
         try {
-          const resp = await sendCommand(`22 ${ident.did}`, 3000);
-          if (resp && !resp.includes("ERROR") && !resp.includes("NO DATA") && resp.length > 2) {
-            responses[ident.label] = resp;
+          const resp = await sendCommand(`22 ${d.did}`, 4000);
+          if (resp && resp.length > 4 && !resp.includes("NO DATA") && !resp.includes("ERROR")) {
+            responses[d.label] = resp;
           }
         } catch {}
+        await delay(100);
       }
 
-      // Also try the raw long coding read (Mode 01)
-      try {
-        const rawCoding = await sendCommand(`09 04`, 3000);
-        if (rawCoding && !rawCoding.includes("ERROR") && !rawCoding.includes("NO DATA")) {
-          responses["raw_coding"] = rawCoding;
-        }
-      } catch {}
-
       // Close session
-      await sendCommand(`10 01`, 1500);
+      await sendCommand("10 01", 1500);
 
-      if (Object.keys(responses).length > 0) {
+      if (Object.keys(responses).length > 1) {
         backup.modules[mod.addr] = {
           name: mod.name,
           address: mod.addr,
+          can_tx: mod.tx,
+          can_rx: mod.rx,
           responses: responses,
           backed_up_at: new Date().toISOString(),
         };
         successCount++;
-        const keys = Object.keys(responses).join(", ");
-        log(`✓ ${mod.addr} ${mod.name} — saved (${keys})`, "success");
+        const keys = Object.keys(responses).filter(k => k !== "diag_session").join(", ");
+        log(`✓ ${mod.addr} ${mod.name} — saved (${keys || "session only"})`, "success");
       } else {
         failCount++;
-        log(`⊘ ${mod.addr} ${mod.name} — no data (module may not respond on this channel)`, "warn");
+        log(`⊘ ${mod.addr} ${mod.name} — session opened but no coding data`, "warn");
       }
     } catch (err) {
       failCount++;
       log(`✗ ${mod.addr} ${mod.name} — ${err.message}`, "error");
     }
-    await delay(300);
+    // Reset for next module
+    await resetELM();
+    await delay(200);
   }
 
   backup.summary = { total_scanned: BACKUP_MODULES.length, success: successCount, failed: failCount };
@@ -883,7 +956,8 @@ async function runBackup() {
 
   log("", "info");
   log(`Backup complete: ${successCount} modules saved, ${failCount} skipped/failed`, "success");
-  log("Download the backup file and keep it safe before making any changes.", "info");
+  if (successCount > 0) log("Download the backup file and keep it safe.", "info");
+  else log("No modules responded. Check: ignition ON, hood unlatched, dongle connected.", "error");
   render();
 }
 
@@ -938,31 +1012,56 @@ async function restoreFromBackup() {
   const log = (m, t = "info") => { state.restoreLog.push({ msg: m, type: t, ts: Date.now() }); render(); };
   const modules = state.backupData.modules;
 
-  log("Starting restore from backup...", "info");
+  log("Starting restore from backup with CAN routing...", "info");
 
   for (const [addr, mod] of Object.entries(modules)) {
-    log(`Restoring module ${addr} (${mod.name})...`, "info");
+    const canInfo = CAN_MAP[addr];
+    if (!canInfo) { log(`⊘ ${addr} — no CAN mapping, skipped`, "warn"); continue; }
+
+    log(`[${addr}] Routing to ${mod.name} (CAN ${canInfo.tx}→${canInfo.rx})...`, "info");
     try {
-      await sendCommand(`10 03`, 2000);
+      await switchToModule(addr);
+      const diag = await sendCommand("10 03", 3000);
+
+      if (!diag || diag.includes("NO DATA") || diag.includes("ERROR")) {
+        log(`⊘ ${addr} ${mod.name} — no response`, "warn");
+        await resetELM();
+        continue;
+      }
 
       // Write back any coding values we have
-      if (mod.responses.long_coding) {
-        const writeResp = await sendCommand(`2E F1 A2 ${mod.responses.long_coding}`, 4000);
-        log(`Write F1 A2 → ${writeResp}`, "cmd");
-      }
-      if (mod.responses.coding_value) {
-        const writeResp = await sendCommand(`2E 06 00 ${mod.responses.coding_value}`, 4000);
-        log(`Write 06 00 → ${writeResp}`, "cmd");
-      }
-      if (mod.responses.coding_id) {
-        const writeResp = await sendCommand(`2E F1 87 ${mod.responses.coding_id}`, 4000);
-        log(`Write F1 87 → ${writeResp}`, "cmd");
+      const writes = [
+        { key: "long_coding", did: "F1 A2" },
+        { key: "coding_binary", did: "F1 DF" },
+        { key: "coding_06", did: "06 00" },
+        { key: "vw_coding_id", did: "F1 87" },
+      ];
+
+      let wrote = false;
+      for (const w of writes) {
+        if (mod.responses[w.key]) {
+          // Extract just the data bytes (strip the response header)
+          let data = mod.responses[w.key];
+          // Response format: "62 F1 87 XX XX XX..." — strip service + DID echo
+          const parts = data.trim().split(/\s+/);
+          // Find where data starts (after 62 + DID bytes)
+          const didLen = w.did.split(" ").length;
+          const dataStart = 1 + didLen; // skip "62" + DID bytes
+          if (parts.length > dataStart) {
+            const payload = parts.slice(dataStart).join(" ");
+            const writeResp = await sendCommand(`2E ${w.did} ${payload}`, 5000);
+            log(`  Write ${w.did} → ${writeResp}`, "cmd");
+            wrote = true;
+          }
+        }
       }
 
-      await sendCommand(`10 01`, 1500);
-      log(`✓ ${addr} ${mod.name} restore attempted`, "success");
+      await sendCommand("10 01", 1500);
+      await resetELM();
+      log(`${wrote ? "✓" : "⊘"} ${addr} ${mod.name} ${wrote ? "restore attempted" : "no writable data"}`, wrote ? "success" : "warn");
     } catch (err) {
       log(`✗ ${addr} ${mod.name} — ${err.message}`, "error");
+      await resetELM();
     }
     await delay(500);
   }
